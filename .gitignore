@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+
+venv/
+.env/
+
+data/matches.csv
+models/model.pkl
+models/*.png
+.DS_Store

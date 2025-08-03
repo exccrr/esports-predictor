@@ -1,18 +1,72 @@
 import joblib
 import pandas as pd
-from src.feature_engineering import prepare_features
 
 model = joblib.load("models/model.pkl")
+matches = pd.read_csv("data/matches.csv")
+matches = matches.dropna(subset=["radiant_name", "dire_name"]) 
+
+winrate = {}
+for team in pd.concat([matches["radiant_name"], matches["dire_name"]]).dropna().unique():
+    team_matches = matches[(matches["radiant_name"] == team) | (matches["dire_name"] == team)].head(30)
+    wins = ((team_matches["radiant_name"] == team) & (team_matches["radiant_win"] == True)).sum()
+    winrate[team] = (wins + 5) / (len(team_matches) + 10)
+
+form_wr = {}
+for team in winrate.keys():
+    team_matches = matches[(matches["radiant_name"] == team) | (matches["dire_name"] == team)].head(5)
+    wins = ((team_matches["radiant_name"] == team) & (team_matches["radiant_win"] == True)).sum()
+    form_wr[team] = (wins + 2) / (len(team_matches) + 4)
+
+h2h = {}
+for _, row in matches.iterrows():
+    pair = tuple(sorted([row["radiant_name"], row["dire_name"]]))
+    if pair not in h2h:
+        h2h[pair] = {"games": 0, "wins": 0}
+    h2h[pair]["games"] += 1
+    if row["radiant_win"]:
+        h2h[pair]["wins"] += 1
+
+def get_h2h(r, d):
+    pair = tuple(sorted([r, d]))
+    if pair in h2h:
+        games = h2h[pair]["games"]
+        wins = h2h[pair]["wins"]
+        return (wins + 2) / (games + 4)
+    return 0.5
 
 def predict_winner(radiant_team, dire_team):
-    all_teams = pd.read_csv("data/matches.csv")[["radiant_name","dire_name"]].dropna()
+    radiant_wr = winrate.get(radiant_team, 0.5)
+    dire_wr = winrate.get(dire_team, 0.5)
+    radiant_form = form_wr.get(radiant_team, 0.5)
+    dire_form = form_wr.get(dire_team, 0.5)
+    h2h_wr = get_h2h(radiant_team, dire_team)
+
+    if all(abs(x - 0.5) < 1e-6 for x in [radiant_wr, dire_wr, radiant_form, dire_form, h2h_wr]):
+        print("\n No historical data for these teams. Returning neutral 50/50 prediction.\n")
+        return 50.0, 50.0
+
+    all_teams = matches[["radiant_name","dire_name"]].dropna()
     dummy = pd.get_dummies(all_teams)
     X = pd.DataFrame(columns=dummy.columns)
     X.loc[0] = 0
+
     if f"radiant_name_{radiant_team}" in X.columns:
         X.loc[0,f"radiant_name_{radiant_team}"] = 1
     if f"dire_name_{dire_team}" in X.columns:
         X.loc[0,f"dire_name_{dire_team}"] = 1
+
+    X["radiant_winrate"] = radiant_wr
+    X["dire_winrate"] = dire_wr
+    X["radiant_form"] = radiant_form
+    X["dire_form"] = dire_form
+    X["h2h_wr"] = h2h_wr
+
+    print("\n Features used for prediction:")
+    print(f"  {radiant_team} winrate (last 30): {radiant_wr:.2f}")
+    print(f"  {dire_team} winrate (last 30): {dire_wr:.2f}")
+    print(f"  {radiant_team} form (last 5): {radiant_form:.2f}")
+    print(f"  {dire_team} form (last 5): {dire_form:.2f}")
+    print(f"  Head-to-head WR: {h2h_wr:.2f}\n")
 
     prob = model.predict_proba(X)[0]
     radiant_pct = float(prob[1]) * 100
