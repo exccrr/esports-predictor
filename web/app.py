@@ -15,23 +15,32 @@ teams = sorted(set(matches["radiant_name"].dropna().unique()) | set(matches["dir
 @app.route("/", methods=["GET", "POST"])
 def index():
     prediction = None
+    error = None
+
     if request.method == "POST":
         radiant = request.form.get("radiant")
         dire = request.form.get("dire")
         model = request.form.get("model")
 
-        if radiant and dire and radiant != dire:
-            rad_pct, dire_pct = predict_winner(radiant, dire, model_name=model)
-            confidence = get_confidence_level(radiant, dire)
-            prediction = {
-                "radiant": radiant,
-                "dire": dire,
-                "radiant_pct": f"{rad_pct:.2f}",
-                "dire_pct": f"{dire_pct:.2f}",
-                "confidence": confidence
-            }
+        if not radiant or not dire:
+            error = "Please select both teams."
+        elif radiant == dire:
+            error = "Teams must be different."
+        else:
+            try:
+                rad_pct, dire_pct = predict_winner(radiant, dire, model_name=model)
+                confidence = get_confidence_level(radiant, dire)
+                prediction = {
+                    "radiant": radiant,
+                    "dire": dire,
+                    "radiant_pct": round(rad_pct * 100, 2),
+                    "dire_pct": round(dire_pct * 100, 2),
+                    "confidence": confidence
+                }
+            except Exception as e:
+                error = f"Prediction error: {str(e)}"
 
-    return render_template("index.html", teams=teams, prediction=prediction)
+    return render_template("index.html", teams=teams, prediction=prediction, error=error)
 
 if __name__ == "__main__":
     app.run(debug=True)

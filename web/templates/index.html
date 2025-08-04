@@ -69,11 +69,17 @@
         <button type="submit">Predict</button>
     </form>
 
+    {% if error %}
+  <div style="border: 1px solid red; padding: 10px; color: red; background-color: #ffe6e6; margin-top: 15px;">
+    ⚠️ <strong>{{ error }}</strong>
+  </div>
+    {% endif %}
+
     {% if prediction %}
     <div class="result">
         <h2>Prediction</h2>
-        <p><strong>{{ prediction.radiant }}</strong> win chance: {{ prediction.radiant_pct|float * 100 | round(2) }}%</p>
-        <p><strong>{{ prediction.dire }}</strong> win chance: {{ prediction.dire_pct|float * 100 | round(2) }}%</p>
+        <p><strong>{{ prediction.radiant }}</strong> win chance: {{ prediction.radiant_pct }}%</p>
+        <p><strong>{{ prediction.dire }}</strong> win chance: {{ prediction.dire_pct }}%</p>
         <p>Confidence level: <strong>{{ prediction.confidence }}</strong></p>
     </div>
     {% endif %}
