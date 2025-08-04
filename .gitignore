@@ -1,11 +1,32 @@
+# CatBoost logs
+catboost_info/
+
+# Jupyter/IPython checkpoints (если используешь)
+.ipynb_checkpoints/
+
+# VS Code config
+.vscode/
+
+# PyCharm config
+.idea/
+
+# Compiled files
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 
-venv/
-.env/
+# Models
+models/*.pkl
 
-data/matches.csv
-models/model.pkl
+# Matplotlib figures
 models/*.png
-.DS_Store
+
+# Data
+data/*.csv
+
+# Logs / artifacts
+*.log
+*.tsv
+*.json
+*.out

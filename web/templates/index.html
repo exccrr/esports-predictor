@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Esports Win Predictor</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #121212;
+            color: #f0f0f0;
+            padding: 30px;
+        }
+        h1 {
+            color: #00ffd5;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+        }
+        select {
+            margin: 10px 0;
+            padding: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00ffd5;
+            border: none;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 30px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Esports Win Predictor</h1>
+
+    <form method="post">
+        <label for="radiant">Radiant Team:</label>
+        <select name="radiant" required>
+            {% for team in teams %}
+                <option value="{{ team }}">{{ team }}</option>
+            {% endfor %}
+        </select><br>
+
+        <label for="dire">Dire Team:</label>
+        <select name="dire" required>
+            {% for team in teams %}
+                <option value="{{ team }}">{{ team }}</option>
+            {% endfor %}
+        </select><br>
+
+        <label for="model">Model:</label>
+        <select name="model">
+            <option value="xgb">XGBoost</option>
+            <option value="catboost">CatBoost</option>
+            <option value="logistic">Logistic Regression</option>
+        </select><br>
+
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if prediction %}
+    <div class="result">
+        <h2>Prediction</h2>
+        <p><strong>{{ prediction.radiant }}</strong> win chance: {{ prediction.radiant_pct|float * 100 | round(2) }}%</p>
+        <p><strong>{{ prediction.dire }}</strong> win chance: {{ prediction.dire_pct|float * 100 | round(2) }}%</p>
+        <p>Confidence level: <strong>{{ prediction.confidence }}</strong></p>
+    </div>
+    {% endif %}
+</body>
+</html>
