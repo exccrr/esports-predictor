@@ -46,8 +46,7 @@ python train_models.py
 
 ### 3. Run the web app
 ```bash
-cd web
-python app.py
+python web/app.py
 ```
 
 Open your browser and go to [http://127.0.0.1:5050](http://127.0.0.1:5050)
