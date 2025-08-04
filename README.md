@@ -41,7 +41,7 @@ Place your `matches.csv` file in the `data/` folder.
 ### 2. Train the models
 Run the training script to train and save models:
 ```bash
-python train_models.py
+python src/train_models.py
 ```
 
 ### 3. Run the web app
