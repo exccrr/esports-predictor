@@ -84,6 +84,48 @@ def predict_winner(radiant_team, dire_team, model_name="xgb"):
     dire_pct = float(prob[0])
     return radiant_pct, dire_pct
 
+def predict_all_models(radiant_team, dire_team):
+    models = {
+        "xgb": joblib.load("models/xgb_model.pkl"),
+        "catboost": joblib.load("models/catboost_model.pkl"),
+        "logistic": joblib.load("models/logistic_model.pkl")
+    }
+
+    radiant_wr = winrate.get(radiant_team, 0.5)
+    dire_wr = winrate.get(dire_team, 0.5)
+    radiant_form = form_wr.get(radiant_team, 0.5)
+    dire_form = form_wr.get(dire_team, 0.5)
+    h2h_wr = get_h2h(radiant_team, dire_team)
+
+    if all(abs(x - 0.5) < 1e-6 for x in [radiant_wr, dire_wr, radiant_form, dire_form, h2h_wr]):
+        return {name: (50.0, 50.0) for name in models}
+
+    all_teams = matches[["radiant_name","dire_name"]].dropna()
+    dummy = pd.get_dummies(all_teams)
+    X = pd.DataFrame(columns=dummy.columns)
+    X.loc[0] = 0
+
+    if f"radiant_name_{radiant_team}" in X.columns:
+        X.loc[0,f"radiant_name_{radiant_team}"] = 1
+    if f"dire_name_{dire_team}" in X.columns:
+        X.loc[0,f"dire_name_{dire_team}"] = 1
+
+    X["radiant_winrate"] = radiant_wr
+    X["dire_winrate"] = dire_wr
+    X["radiant_form"] = radiant_form
+    X["dire_form"] = dire_form
+    X["h2h_wr"] = h2h_wr
+
+    results = {}
+    for name, model in models.items():
+        prob = model.predict_proba(X)[0]
+        total = prob[0] + prob[1]
+        radiant_pct = prob[1] / total 
+        dire_pct = prob[0] / total 
+        results[name] = (radiant_pct, dire_pct)
+
+    return results
+
 if __name__ == "__main__":
     radiant = "Team Spirit"
     dire = "PSG.LGD"

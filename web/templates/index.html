@@ -39,6 +39,10 @@
             padding: 20px;
             border-radius: 10px;
         }
+        img {
+            max-width: 100%;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -70,18 +74,30 @@
     </form>
 
     {% if error %}
-  <div style="border: 1px solid red; padding: 10px; color: red; background-color: #ffe6e6; margin-top: 15px;">
-    ⚠️ <strong>{{ error }}</strong>
-  </div>
+    <div style="border: 1px solid red; padding: 10px; color: red; background-color: #ffe6e6; margin-top: 15px;">
+        ⚠️ <strong>{{ error }}</strong>
+    </div>
     {% endif %}
 
     {% if prediction %}
     <div class="result">
         <h2>Prediction</h2>
-        <p><strong>{{ prediction.radiant }}</strong> win chance: {{ prediction.radiant_pct }}%</p>
-        <p><strong>{{ prediction.dire }}</strong> win chance: {{ prediction.dire_pct }}%</p>
+        <p><strong>{{ prediction.radiant }}</strong> vs <strong>{{ prediction.dire }}</strong></p>
         <p>Confidence level: <strong>{{ prediction.confidence }}</strong></p>
+        <hr>
+        {% for model, result in prediction.models.items() %}
+            <p><strong>{{ model|capitalize }}:</strong></p>
+            <p>{{ prediction.radiant }} win chance: {{ result.radiant_pct }}%</p>
+            <p>{{ prediction.dire }} win chance: {{ result.dire_pct }}%</p>
+            <br>
+        {% endfor %}
     </div>
+
+    {% if chart %}
+    <div>
+        <img src="{{ url_for('static', filename='pred_chart.png') }}" alt="Prediction chart">
+    </div>
+    {% endif %}
     {% endif %}
 </body>
 </html>
