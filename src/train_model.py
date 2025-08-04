@@ -1,37 +1,44 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from xgboost import XGBClassifier, plot_importance
 import joblib
-from feature_engineering import prepare_features
 import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from xgboost import XGBClassifier, plot_importance
+from catboost import CatBoostClassifier
+from sklearn.metrics import accuracy_score
+
+from feature_engineering import prepare_features
 
 df = pd.read_csv("data/matches.csv")
 X, y = prepare_features(df)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
+pd.concat([X, y.rename("radiant_win")], axis=1).to_csv("data/matches_encoded.csv", index=False)
 
-model = XGBClassifier(
-    n_estimators=200,
-    max_depth=5,
-    learning_rate=0.1,
-    subsample=0.8,
-    eval_metric="logloss"
-)
-model.fit(X_train, y_train)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-acc = model.score(X_test, y_test)
-print(f"XGBoost model trained. Accuracy: {acc:.3f}")
+models = {
+    "xgb": XGBClassifier(
+        n_estimators=200,
+        max_depth=5,
+        learning_rate=0.1,
+        subsample=0.8,
+        eval_metric="logloss",
+        use_label_encoder=False
+    ),
+    "catboost": CatBoostClassifier(verbose=0),
+    "logistic": LogisticRegression(max_iter=1000)
+}
 
-joblib.dump(model, "models/model.pkl")
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+    acc = accuracy_score(y_test, preds)
+    print(f"{name.upper()} Accuracy: {acc:.3f}")
+    joblib.dump(model, f"models/{name}_model.pkl")
 
-importances = model.feature_importances_
-feat_df = pd.DataFrame({"feature": X.columns, "importance": importances})
-feat_df = feat_df.sort_values(by="importance", ascending=False)
-print("\nTop 10 important features:")
-print(feat_df.head(10))
-
-plt.figure(figsize=(10,6))
-plot_importance(model, max_num_features=10)
+plt.figure(figsize=(10, 6))
+plot_importance(models["xgb"], max_num_features=10)
 plt.tight_layout()
 plt.savefig("models/feature_importance.png")
 print("Feature importance plot saved to models/feature_importance.png")
